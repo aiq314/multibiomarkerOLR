@@ -364,7 +364,51 @@ run_all <- function(results_folder = 'results',
                   is_single = is_single,
                   th1 = th1,
                   th2 = th2)
-
+  
+  # Calculate rate of correct prediciton for each drug
+  ordinaldf["pred_label"]<-predicted_labels_training
+  ordinaldf_test["pred_label"]<-predicted_labels_testing
+  drug_correct_predict <- data.frame(
+    azimilide = numeric(1),
+    bepridil = numeric(1),
+    disopyramide = numeric(1),
+    dofetilide = numeric(1),
+    ibutilide = numeric(1),
+    quinidine = numeric(1),
+    sotalol = numeric(1),
+    vandetanib = numeric(1),
+    astemizole = numeric(1),
+    chlorpromazine = numeric(1),
+    cisapride = numeric(1),
+    clarithromycin = numeric(1),
+    clozapine = numeric(1),
+    domperidone = numeric(1),
+    droperidol = numeric(1),
+    ondansetron = numeric(1),
+    pimozide = numeric(1),
+    risperidone = numeric(1),
+    terfenadine = numeric(1),
+    diltiazem = numeric(1),
+    loratadine = numeric(1),
+    metoprolol = numeric(1),
+    mexiletine = numeric(1),
+    nifedipine = numeric(1),
+    nitrendipine = numeric(1),
+    ranolazine = numeric(1),
+    tamoxifen = numeric(1),
+    verapamil = numeric(1)
+  )
+  for (drug in unique(ordinaldf$drug_name)) {
+    total_samples <- sum(ordinaldf$drug_name==drug)
+    correct_samples <- sum((ordinaldf$pred_label==ordinaldf$label)[ordinaldf$drug_name==drug])
+    drug_correct_predict[drug] <- correct_samples/total_samples
+  }
+  for (drug in unique(ordinaldf_test$drug_name)) {
+    total_samples <- sum(ordinaldf_test$drug_name==drug)
+    correct_samples <- sum((ordinaldf_test$pred_label==ordinaldf_test$label)[ordinaldf_test$drug_name==drug])
+    drug_correct_predict[drug] <- correct_samples/total_samples
+  }
+  
   # Close the connection to the text file
   close(logfile)
 
@@ -412,6 +456,21 @@ run_all <- function(results_folder = 'results',
   # Add Betas
   for (i in 1:length(betas)) {
     summarydf[[paste0("Beta_", i)]] <- betas[i]
+  }
+  
+  # Add means
+  for (i in 1:length(means)) {
+    summarydf[[paste0("Mean_", i)]] <- means[i]
+  }
+  
+  # Add sds
+  for (i in 1:length(sds)) {
+    summarydf[[paste0("SD_", i)]] <- sds[i]
+  }
+  
+  # Add drug correct predict
+  for (drug in colnames(drug_correct_predict)) {
+    summarydf[drug] <- drug_correct_predict[drug]
   }
   
   return(summarydf)
@@ -936,6 +995,7 @@ rankscorefun <- function(pmeasures,
     pm_df$Weight <- pm_df$Weight / sum(pm_df$Weight)
     pl_df$Weight <- pl_df$Weight / max(pl_df$Weight)
   }
+  pl_df$Weight[4] <- NA # Not acceptable performance is removed
   
   # Initialize the performance dataframe for the model
   model_df <- data.frame(
